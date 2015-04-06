@@ -264,15 +264,4 @@ end
 function zoom_Axes(factor,handles)
 %%
 % Zoom figure by factor. [-100,100]
-% Zoom by setting CameraViewAngle. (0,180) default:6.6086. We use [1.5,50]
-default = 6.6086;
-min = 1.5;
-max = 50;
-if factor > 0
-    angle = default + factor/100 * (max - default);
-elseif factor < 0
-    angle = default - (-factor/100) * (default - min);
-else
-    angle = default;
-end
-set(handles.axes3d,'CameraViewAngle',angle);
+% Zoom by setting CameraViewAngle. (0,180) default:6.6086. We 
