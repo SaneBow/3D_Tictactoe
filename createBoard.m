@@ -1,4 +1,3 @@
-function createBoard(n)
-global GB;
-GB = zeros(n,n,3);
+function gameBoard = createBoard(n)
+gameBoard = zeros(n,n,n);
 end

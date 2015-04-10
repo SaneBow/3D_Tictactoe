@@ -59,8 +59,7 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 % My own codes start from here
-init_Axes(3,handles);
-
+gameReset(3,handles);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = gui_OutputFcn(hObject, eventdata, handles) 
@@ -78,9 +77,8 @@ function resetbtn_Callback(hObject, eventdata, handles)
 % hObject    handle to resetbtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-init_Axes(3,handles);
 set(handles.dimtext,'String','3');
-
+gameReset(3,handles);
 
 % --- Executes on button press in mousechkbox.
 function mousechkbox_Callback(hObject, eventdata, handles)
@@ -138,7 +136,7 @@ function dimbtn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 dim = str2double(get(handles.dimtext,'String'));
-init_Axes(dim,handles);
+gameReset(dim,handles);
 
 
 % --- Executes on button press in restartbtn.
@@ -146,8 +144,8 @@ function restartbtn_Callback(hObject, eventdata, handles)
 % hObject    handle to restartbtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
+dim = str2double(get(handles.dimtext,'String'));
+gameReset(dim,handles);
 
 
 % --- Executes on slider movement.
@@ -204,18 +202,47 @@ rotate_Axes('up',handles);
 
 
 % --- Custom Callbacks
-function cube_Callback(hObject, eventdata, handles)
-if get(hObject,'FaceAlpha') == 1
+function cube_Callback(hObject, eventdata, position, handles)
+global WON;
+if get(hObject,'FaceAlpha') == 1 || WON == 1
     return
 end
 
-global player;
-if player == 1
+global PLAYER;
+if PLAYER == 1
     color = [1 0 0];
-else
+elseif PLAYER == 2
     color = [0 0 1];
+else
+    disp('[Err] PLAYER not set');
 end
 set(hObject,'FaceColor',color,'FaceAlpha',1);
+hightLight(hObject);
+setMove(position);
+
+% Check game status
+if isWin()
+    % Game over
+    WON = 1;
+    % Show winning banner
+    switch isWin()
+        case 1
+            set(handles.winlabel,'String','Player 1 wins!','ForegroundColor','red','Visible','on');
+        case 2
+            set(handles.winlabel,'String','Player 2 wins!','ForegroundColor','blue','Visible','on');     
+    end
+    
+    % Flash label
+    global TIMER;
+    TIMER = timer;
+    TIMER.TimerFcn = {@flashLabel,handles.winlabel};
+    TIMER.Period = 0.2;
+    TIMER.ExecutionMode = 'fixedRate';
+    start(TIMER);
+else
+    setPlayerLabels(handles);
+end
+
 
 
 
@@ -229,6 +256,7 @@ clear cubes;
 global cubes;
 cubes = gobjects(dim,dim,dim);
 
+% Draw cubes using patch
 cla(handles.axes3d,'reset');
 vert = [0 0 0;1 0 0;1 1 0;0 1 0;0 0 1;1 0 1;1 1 1;0 1 1];
 fac = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
@@ -236,16 +264,18 @@ for x = 1:dim
     for y = 1:dim
         for z = 1:dim
             newvert = vert + ones(8,3) * (diag([x-1 y-1 z-1]) .* dist);
-            cubes(x,y,z) = patch('Vertices',newvert,'Faces',fac,'FaceColor',0.2*[1 1 1],'ButtonDownFcn',@cube_Callback);
+            cubes(x,y,z) = patch('Vertices',newvert,'Faces',fac,'FaceColor',0.2*[1 1 1],'ButtonDownFcn',{@cube_Callback,[x y z],handles});
             hold on;
         end
     end
 end
 
+%Visual Effects
 axis off;
 axis vis3d;
 alpha(0.15);
 camorbit(36,-72);
+
 
 function rotate_Axes(direction,handles)
 %%
@@ -276,3 +306,48 @@ else
     angle = default;
 end
 set(handles.axes3d,'CameraViewAngle',angle);
+
+function setPlayerLabels(handles)
+%%
+global PLAYER;
+switch PLAYER
+    case 1
+        set(handles.player1label,'Enable','On');
+        set(handles.player2label,'Enable','Off');
+    case 2
+        set(handles.player1label,'Enable','Off');
+        set(handles.player2label,'Enable','On');
+    otherwise
+        disp('[Err] PLAYER not set');
+end
+
+function flashLabel(~,~,label)
+%%
+switch get(label,'Visible')
+    case 'on'
+        set(label,'Visible','off');
+    case 'off'
+        set(label,'Visible','on');
+end
+
+function gameReset(dim,handles)
+%%
+% Reset variables and GUI
+init_Axes(dim,handles);
+initGame(dim);
+setPlayerLabels(handles);
+set(handles.winlabel,'Visible','off');
+global WON;
+WON = 0;
+
+global TIMER;
+if isobject(TIMER) && strcmp(TIMER.Running,'on')
+    stop(TIMER);
+    delete(TIMER);
+    clear('global','TIMER');
+    set(handles.winlabel,'Visible','off');
+end
+
+function highLight(obj)
+%%
+set(hObject,'EdgeColor','green','LineWidth',5);
