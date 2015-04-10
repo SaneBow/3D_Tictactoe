@@ -99,12 +99,17 @@ function undobtn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global cubes;
-to_undo = undoMove;
+[prev,to_undo] = undoMove;
 if to_undo == [0 0 0]
     disp('Undo not available');
     return;
 end
 set(cubes(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+if prev == [0 0 0]
+    set(cubes,'EdgeColor','[0 0 0]','LineWidth',0.5); %Clear highlight
+else 
+    highLight(cubes(prev(1),prev(2),prev(3)));
+end
 setPlayerLabels(handles);
 
 % --- Executes on button press in redobtn.
@@ -126,6 +131,7 @@ if to_redo == [0 0 0]
     return;
 end
 set(cubes(to_redo(1),to_redo(2),to_redo(3)),'FaceColor',color,'FaceAlpha',1);
+highLight(cubes(to_redo(1),to_redo(2),to_redo(3)));
 setPlayerLabels(handles);
 
 
@@ -371,4 +377,6 @@ end
 
 function highLight(obj)
 %%
+global cubes;
+set(cubes,'EdgeColor','[0 0 0]','LineWidth',0.5);
 set(obj,'EdgeColor','green','LineWidth',5);
