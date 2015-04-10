@@ -98,14 +98,35 @@ function undobtn_Callback(hObject, eventdata, handles)
 % hObject    handle to undobtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+global cubes;
+to_undo = undoMove;
+if to_undo == [0 0 0]
+    disp('Undo not available');
+    return;
+end
+set(cubes(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+setPlayerLabels(handles);
 
 % --- Executes on button press in redobtn.
 function redobtn_Callback(hObject, eventdata, handles)
 % hObject    handle to redobtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+global PLAYER cubes;
+if PLAYER == 1
+    color = [1 0 0];
+elseif PLAYER == 2
+    color = [0 0 1];
+else
+    disp('[Err] PLAYER not set');
+end
+to_redo = redoMove;
+if to_redo == [0 0 0]
+    disp('Redo not available');
+    return;
+end
+set(cubes(to_redo(1),to_redo(2),to_redo(3)),'FaceColor',color,'FaceAlpha',1);
+setPlayerLabels(handles);
 
 
 function dimtext_Callback(hObject, eventdata, handles)
@@ -217,7 +238,7 @@ else
     disp('[Err] PLAYER not set');
 end
 set(hObject,'FaceColor',color,'FaceAlpha',1);
-hightLight(hObject);
+highLight(hObject);
 setMove(position);
 
 % Check game status
@@ -350,4 +371,4 @@ end
 
 function highLight(obj)
 %%
-set(hObject,'EdgeColor','green','LineWidth',5);
+set(obj,'EdgeColor','green','LineWidth',5);
