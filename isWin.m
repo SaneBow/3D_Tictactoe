@@ -1,4 +1,9 @@
 function winner = isWin()
+%% 
+% return 0 - game continue
+%        1 - player 1 wins
+%        2 - player 2 wins
+%        3 - game ended in a draw
 global GB;
 dim = size(GB,1);
 
@@ -79,6 +84,10 @@ if flag > 0
     return;
 end
 
+% Draw game
+if winner == 0 && isempty(GB(GB==0))
+    winner = 3;
+end
 end
 
 %% check lines in given plane

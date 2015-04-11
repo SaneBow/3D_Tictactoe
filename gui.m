@@ -210,6 +210,11 @@ function restartbtn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 dim = str2double(get(handles.dimtext,'String'));
+if isnan(dim) || mod(dim,1) ~= 0 || (dim>10 || dim<2)
+    msgbox('Invalid dimension setting.','Input Error','error');
+    set(handles.dimtext,'String','');
+    return;
+end
 gameReset(dim,handles);
 setGameControlStatus('reset',handles);
 
@@ -471,6 +476,8 @@ switch isWin()
         set(handles.winlabel,'String','Player 1 wins!','ForegroundColor','red','Visible','on');
     case 2
         set(handles.winlabel,'String','Player 2 wins!','ForegroundColor','blue','Visible','on');     
+    case 3 
+        set(handles.winlabel,'String','Game ended in a draw','ForegroundColor','black','Visible','on'); 
 end
 % Flash label
 global TIMER;
