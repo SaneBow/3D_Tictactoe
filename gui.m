@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 11-Apr-2015 21:21:29
+% Last Modified by GUIDE v2.5 12-Apr-2015 01:00:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -184,6 +184,14 @@ function dimtext_KeyPressFcn(hObject, eventdata, handles)
 
 % --- Executes on button press in dimbtn.
 function dimbtn_Callback(hObject, eventdata, handles)
+% hObject    handle to dimbtn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Moved to ButtonDownFcn to fix set focus problem
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over dimbtn.
+function dimbtn_ButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to dimbtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
