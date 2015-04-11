@@ -295,6 +295,18 @@ switch eventdata.Key
         rotate_Axes('down',handles);
     case 'uparrow'
         rotate_Axes('up',handles);
+    case 'a'
+        preMove([-1 0 0]);
+    case 'd'
+        preMove([1 0 0]);
+    case 's'
+        preMove([0 -1 0]);
+    case 'w'
+        preMove([0 1 0]);
+    case 'j'
+        preMove([0 0 -1]);
+    case 'k'
+        preMove([0 0 1]);
 end
 
 % --- Executes during object deletion, before destroying properties.
@@ -371,7 +383,7 @@ end
 axis off;
 axis vis3d;
 alpha(0.15);
-camorbit(36,-72);
+camorbit(30,-80);
 
 
 function rotate_Axes(direction,handles)
@@ -473,8 +485,9 @@ hideWinner(handles);
 function highLight(obj)
 %%
 global CUBES;
+dim = length(CUBES);
 set(CUBES,'EdgeColor','[0 0 0]','LineWidth',0.5);
-set(obj,'EdgeColor','green','LineWidth',5);
+set(obj,'EdgeColor','green','LineWidth',-0.5*dim+6);
 
 function setGameControlStatus(why,handles)
 %%
@@ -498,6 +511,26 @@ switch why
         set(handles.undobtn,'Enable','off');
 end
 
-
-
+function preMove(direction)
+%%
+global POINTER HISTORY PLAYER CUBES;
+dim = length(CUBES);
+if isempty(POINTER) 
+    POINTER = HISTORY.data(HISTORY.last,:);
+end
+ptr = POINTER + direction;
+% Border
+if ~isempty(ptr(ptr>dim|ptr<1))
+    return;
+end
+nowcube = CUBES(ptr(1),ptr(2),ptr(3));
+prevcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
+% Highlight pointed cube
+if get(nowcube,'FaceAlpha') ~= 1  % Not ocuppied
+    set(nowcube,'FaceColor',[PLAYER==1,0,PLAYER==2],'FaceAlpha',0.2);
+end
+if get(prevcube,'FaceAlpha') ~= 1
+    set(prevcube,'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+end
+POINTER = ptr;
 
