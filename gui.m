@@ -181,11 +181,6 @@ function dimtext_KeyPressFcn(hObject, eventdata, handles)
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
-if strcmp(eventdata.Key,'return')
-    dim = str2double(get(handles.dimtext,'String'));
-    gameReset(dim,handles);
-    setGameControlStatus('reset',handles);
-end
 
 % --- Executes on button press in dimbtn.
 function dimbtn_Callback(hObject, eventdata, handles)
@@ -193,6 +188,11 @@ function dimbtn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 dim = str2double(get(handles.dimtext,'String'));
+if isnan(dim) || mod(dim,1) ~= 0 || (dim>10 || dim<2)
+    msgbox('Dimension must be an integer within [2,10],','Input Error','error');
+    set(handles.dimtext,'String','');
+    return;
+end
 gameReset(dim,handles);
 setGameControlStatus('reset',handles);
 
@@ -296,17 +296,19 @@ switch eventdata.Key
     case 'uparrow'
         rotate_Axes('up',handles);
     case 'a'
-        preMove([-1 0 0]);
+        preMove([-1 0 0],handles);
     case 'd'
-        preMove([1 0 0]);
+        preMove([1 0 0],handles);
     case 's'
-        preMove([0 -1 0]);
+        preMove([0 -1 0],handles);
     case 'w'
-        preMove([0 1 0]);
-    case 'j'
-        preMove([0 0 -1]);
-    case 'k'
-        preMove([0 0 1]);
+        preMove([0 1 0],handles);
+    case 'c'
+        preMove([0 0 -1],handles);
+    case 'e'
+        preMove([0 0 1],handles);
+    case 'return'
+        preMove([0 0 0],handles);
 end
 
 % --- Executes during object deletion, before destroying properties.
@@ -383,7 +385,7 @@ end
 axis off;
 axis vis3d;
 alpha(0.15);
-camorbit(30,-80);
+camorbit(7,-81);
 
 
 function rotate_Axes(direction,handles)
@@ -420,7 +422,7 @@ set(handles.axes3d,'CameraViewAngle',angle);
 
 function setPlayerLabels(handles)
 %%
-global PLAYER;
+global PLAYER POINTER CUBES;
 switch PLAYER
     case 1
         set(handles.player1label,'Enable','On');
@@ -431,6 +433,15 @@ switch PLAYER
     otherwise
         disp('[Err] PLAYER not set');
 end
+% Clear preview
+if isempty(POINTER)
+    return;
+end
+ptrcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
+if get(ptrcube,'FaceAlpha') ~= 1
+    set(ptrcube,'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+end
+clear('global','POINTER'); 
 
 function flashLabel(~,~,label)
 %%
@@ -478,8 +489,10 @@ set(handles.winlabel,'Visible','off');
 set(handles.zoomslider,'Value',0);
 global WON;
 WON = 0;
+clear('global','POINTER');
 
 hideWinner(handles);
+
 
 
 function highLight(obj)
@@ -511,12 +524,26 @@ switch why
         set(handles.undobtn,'Enable','off');
 end
 
-function preMove(direction)
+function preMove(direction,handles)
 %%
 global POINTER HISTORY PLAYER CUBES;
 dim = length(CUBES);
 if isempty(POINTER) 
-    POINTER = HISTORY.data(HISTORY.last,:);
+    if HISTORY.last == [0 0 0]
+        POINTER = [1 1 1];
+        set(CUBES(1,1,1),'EdgeColor',[PLAYER==1,0,PLAYER==2],'LineWidth',-0.5*dim+6);
+        return;
+    else
+        POINTER = HISTORY.data(HISTORY.last,:);
+    end
+end
+if direction == [0 0 0]
+    ptrcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
+    if get(ptrcube,'FaceAlpha') == 1
+        return;
+    end
+    cube_Callback(ptrcube, '', POINTER, handles);
+    return;
 end
 ptr = POINTER + direction;
 % Border
@@ -526,11 +553,16 @@ end
 nowcube = CUBES(ptr(1),ptr(2),ptr(3));
 prevcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
 % Highlight pointed cube
-if get(nowcube,'FaceAlpha') ~= 1  % Not ocuppied
-    set(nowcube,'FaceColor',[PLAYER==1,0,PLAYER==2],'FaceAlpha',0.2);
+if get(nowcube,'EdgeColor') == [0 1 0]  % Not Green Pointer
+    % Do nothing
+else
+    set(nowcube,'EdgeColor',[PLAYER==1,0,PLAYER==2],'LineWidth',-0.5*dim+6);
 end
-if get(prevcube,'FaceAlpha') ~= 1
-    set(prevcube,'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+% Reset passed cube
+if get(prevcube,'EdgeColor') == [0 1 0]
+    % Do nothing
+else
+    set(prevcube,'EdgeColor','[0 0 0]','LineWidth',0.5);
 end
 POINTER = ptr;
 
