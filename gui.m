@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 11-Apr-2015 12:35:53
+% Last Modified by GUIDE v2.5 11-Apr-2015 12:41:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -233,6 +233,27 @@ function uprotbtn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 rotate_Axes('up',handles);
 
+% --- Executes on key press with focus on figure1 or any of its controls.
+function figure1_WindowKeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.FIGURE)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+switch eventdata.Key
+    case 'rightarrow'
+        rotate_Axes('right',handles);
+    case 'leftarrow'
+        rotate_Axes('left',handles);
+    case 'downarrow'
+        rotate_Axes('down',handles);
+    case 'uparrow'
+        rotate_Axes('up',handles);
+end
+
+
+
 % --- Executes during object deletion, before destroying properties.
 function figure1_DeleteFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
@@ -304,15 +325,16 @@ camorbit(36,-72);
 function rotate_Axes(direction,handles)
 %%
 % Rotate cubes figure by 10 degree in specific direction
+deg = 3;
 switch direction
     case 'left'
-        camorbit(handles.axes3d,10,0);
+        camorbit(handles.axes3d,deg,0);
     case 'right'
-        camorbit(handles.axes3d,-10,0);
+        camorbit(handles.axes3d,-deg,0);
     case 'up'
-        camorbit(handles.axes3d,0,-10);
+        camorbit(handles.axes3d,0,-deg);
     case 'down'
-        camorbit(handles.axes3d,0,10);
+        camorbit(handles.axes3d,0,deg);
 end
 
 function zoom_Axes(factor,handles)
@@ -422,6 +444,3 @@ switch why
         set(handles.redobtn,'Enable','off');
         set(handles.undobtn,'Enable','off');
 end
-
-
-
