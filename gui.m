@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 11-Apr-2015 12:41:25
+% Last Modified by GUIDE v2.5 11-Apr-2015 15:15:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -100,27 +100,31 @@ function undobtn_Callback(hObject, eventdata, handles)
 % hObject    handle to undobtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global cubes;
+global CUBES WON;
 [prev,to_undo] = undoMove;
 if to_undo == [0 0 0]
     disp('Undo not available');
     return;
 end
-set(cubes(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+set(CUBES(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
 if prev == [0 0 0]
-    set(cubes,'EdgeColor','[0 0 0]','LineWidth',0.5); %Clear highlight
+    set(CUBES,'EdgeColor','[0 0 0]','LineWidth',0.5); %Clear highlight
 else 
-    highLight(cubes(prev(1),prev(2),prev(3)));
+    highLight(CUBES(prev(1),prev(2),prev(3)));
 end
 setPlayerLabels(handles);
 setGameControlStatus('move',handles);
+if WON == 1
+    WON = 0;
+    hideWinner(handles);
+end
 
 % --- Executes on button press in redobtn.
 function redobtn_Callback(hObject, eventdata, handles)
 % hObject    handle to redobtn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global PLAYER cubes;
+global PLAYER CUBES WON;
 if PLAYER == 1
     color = [1 0 0];
 elseif PLAYER == 2
@@ -133,9 +137,16 @@ if to_redo == [0 0 0]
     disp('Redo not available');
     return;
 end
-set(cubes(to_redo(1),to_redo(2),to_redo(3)),'FaceColor',color,'FaceAlpha',1);
-highLight(cubes(to_redo(1),to_redo(2),to_redo(3)));
-setPlayerLabels(handles);
+set(CUBES(to_redo(1),to_redo(2),to_redo(3)),'FaceColor',color,'FaceAlpha',1);
+highLight(CUBES(to_redo(1),to_redo(2),to_redo(3)));
+% Check game status
+if isWin()
+    % Game over
+    WON = 1;
+    showWinner(handles);
+else
+    setPlayerLabels(handles);
+end
 setGameControlStatus('move',handles);
 
 
@@ -160,6 +171,19 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Executes on key press with focus on dimtext and none of its controls.
+function dimtext_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to dimtext (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if strcmp(eventdata.Key,'return')
+    dim = str2double(get(handles.dimtext,'String'));
+    gameReset(dim,handles);
+    setGameControlStatus('reset',handles);
+end
 
 % --- Executes on button press in dimbtn.
 function dimbtn_Callback(hObject, eventdata, handles)
@@ -169,7 +193,6 @@ function dimbtn_Callback(hObject, eventdata, handles)
 dim = str2double(get(handles.dimtext,'String'));
 gameReset(dim,handles);
 setGameControlStatus('reset',handles);
-
 
 % --- Executes on button press in restartbtn.
 function restartbtn_Callback(hObject, eventdata, handles)
@@ -252,8 +275,6 @@ switch eventdata.Key
         rotate_Axes('up',handles);
 end
 
-
-
 % --- Executes during object deletion, before destroying properties.
 function figure1_DeleteFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
@@ -261,7 +282,11 @@ function figure1_DeleteFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 hideWinner(handles);
 
-% --- Custom Callbacks
+
+
+% ==========================================================
+% ------------------ Custom Callbacks ----------------------
+% ==========================================================
 function cube_Callback(hObject, eventdata, position, handles)
 global WON;
 if get(hObject,'FaceAlpha') == 1 || WON == 1
@@ -291,17 +316,19 @@ end
 setGameControlStatus('move',handles);
 
 
-% -- Custom funcitons
+% ==========================================================
+% ------------------ Custom Functions ----------------------
+% ==========================================================
 function init_Axes(dim,handles)
 %%
-% Plot dim*dim*dim cubes graph with transparent black color
+% Plot dim*dim*dim CUBES graph with transparent black color
 
-dist=2;
-clear cubes;
-global cubes;
-cubes = gobjects(dim,dim,dim);
+dist=(dim-3)*0.3+2;
+clear CUBES;
+global CUBES;
+CUBES = gobjects(dim,dim,dim);
 
-% Draw cubes using patch
+% Draw CUBES using patch
 cla(handles.axes3d,'reset');
 vert = [0 0 0;1 0 0;1 1 0;0 1 0;0 0 1;1 0 1;1 1 1;0 1 1];
 fac = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
@@ -309,7 +336,10 @@ for x = 1:dim
     for y = 1:dim
         for z = 1:dim
             newvert = vert + ones(8,3) * (diag([x-1 y-1 z-1]) .* dist);
-            cubes(x,y,z) = patch('Vertices',newvert,'Faces',fac,'FaceColor',0.2*[1 1 1],'ButtonDownFcn',{@cube_Callback,[x y z],handles});
+            CUBES(x,y,z) = patch('Vertices',newvert,...
+                'Faces',fac,...
+                'FaceColor',0.2*[1 1 1],...
+                'ButtonDownFcn',{@cube_Callback,[x y z],handles});
             hold on;
         end
     end
@@ -324,7 +354,7 @@ camorbit(36,-72);
 
 function rotate_Axes(direction,handles)
 %%
-% Rotate cubes figure by 10 degree in specific direction
+% Rotate CUBES figure by 10 degree in specific direction
 deg = 3;
 switch direction
     case 'left'
@@ -419,8 +449,8 @@ hideWinner(handles);
 
 function highLight(obj)
 %%
-global cubes;
-set(cubes,'EdgeColor','[0 0 0]','LineWidth',0.5);
+global CUBES;
+set(CUBES,'EdgeColor','[0 0 0]','LineWidth',0.5);
 set(obj,'EdgeColor','green','LineWidth',5);
 
 function setGameControlStatus(why,handles)
@@ -444,3 +474,5 @@ switch why
         set(handles.redobtn,'Enable','off');
         set(handles.undobtn,'Enable','off');
 end
+
+
