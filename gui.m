@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 11-Apr-2015 15:15:55
+% Last Modified by GUIDE v2.5 11-Apr-2015 21:21:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -81,6 +81,8 @@ function resetbtn_Callback(hObject, eventdata, handles)
 set(handles.dimtext,'String','3');
 gameReset(3,handles);
 setGameControlStatus('reset',handles);
+set(handles.mousechkbox,'Value',0);
+rotate3d off;
 
 % --- Executes on button press in mousechkbox.
 function mousechkbox_Callback(hObject, eventdata, handles)
@@ -255,6 +257,26 @@ function uprotbtn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 rotate_Axes('up',handles);
+
+
+% --- Executes on button press in helpbtn.
+function helpbtn_Callback(hObject, eventdata, handles)
+% hObject    handle to helpbtn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+msgbox({'                           About                                  ';...
+        'Author:   WANG Xianbo                                             ';...
+        'Email:    sanebow@gmail.com                                       ';...
+        '                                                                  ';...
+        '                           Help                                   ';...
+        'Keyboard: Use arrows to rotate (up/down/left/right)               ';...
+        'Mouse:     Click to set next move                                 ';... 
+        'GUI:                                                              ';...
+        '[Game Control Panel] Redo/Undo/Restart                            ';...
+        '[View Control Panel] Rotation/Zoom/Mouse-rotate                   ';...
+        '[Settings Panel] Change dimension                                                                  ';...
+        '                                                                  ';...
+        },'About/Help','help');
 
 % --- Executes on key press with focus on figure1 or any of its controls.
 function figure1_WindowKeyPressFcn(hObject, eventdata, handles)
@@ -441,6 +463,7 @@ init_Axes(dim,handles);
 initGame(dim);
 setPlayerLabels(handles);
 set(handles.winlabel,'Visible','off');
+set(handles.zoomslider,'Value',0);
 global WON;
 WON = 0;
 
@@ -474,5 +497,7 @@ switch why
         set(handles.redobtn,'Enable','off');
         set(handles.undobtn,'Enable','off');
 end
+
+
 
 
