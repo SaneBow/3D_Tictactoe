@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 07-Apr-2015 03:53:17
+% Last Modified by GUIDE v2.5 11-Apr-2015 12:35:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,6 +60,7 @@ guidata(hObject, handles);
 
 % My own codes start from here
 gameReset(3,handles);
+setGameControlStatus('reset',handles);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = gui_OutputFcn(hObject, eventdata, handles) 
@@ -79,6 +80,7 @@ function resetbtn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.dimtext,'String','3');
 gameReset(3,handles);
+setGameControlStatus('reset',handles);
 
 % --- Executes on button press in mousechkbox.
 function mousechkbox_Callback(hObject, eventdata, handles)
@@ -111,6 +113,7 @@ else
     highLight(cubes(prev(1),prev(2),prev(3)));
 end
 setPlayerLabels(handles);
+setGameControlStatus('move',handles);
 
 % --- Executes on button press in redobtn.
 function redobtn_Callback(hObject, eventdata, handles)
@@ -133,6 +136,7 @@ end
 set(cubes(to_redo(1),to_redo(2),to_redo(3)),'FaceColor',color,'FaceAlpha',1);
 highLight(cubes(to_redo(1),to_redo(2),to_redo(3)));
 setPlayerLabels(handles);
+setGameControlStatus('move',handles);
 
 
 function dimtext_Callback(hObject, eventdata, handles)
@@ -164,6 +168,7 @@ function dimbtn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 dim = str2double(get(handles.dimtext,'String'));
 gameReset(dim,handles);
+setGameControlStatus('reset',handles);
 
 
 % --- Executes on button press in restartbtn.
@@ -173,6 +178,7 @@ function restartbtn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 dim = str2double(get(handles.dimtext,'String'));
 gameReset(dim,handles);
+setGameControlStatus('reset',handles);
 
 
 % --- Executes on slider movement.
@@ -227,6 +233,12 @@ function uprotbtn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 rotate_Axes('up',handles);
 
+% --- Executes during object deletion, before destroying properties.
+function figure1_DeleteFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+hideWinner(handles);
 
 % --- Custom Callbacks
 function cube_Callback(hObject, eventdata, position, handles)
@@ -251,26 +263,11 @@ setMove(position);
 if isWin()
     % Game over
     WON = 1;
-    % Show winning banner
-    switch isWin()
-        case 1
-            set(handles.winlabel,'String','Player 1 wins!','ForegroundColor','red','Visible','on');
-        case 2
-            set(handles.winlabel,'String','Player 2 wins!','ForegroundColor','blue','Visible','on');     
-    end
-    
-    % Flash label
-    global TIMER;
-    TIMER = timer;
-    TIMER.TimerFcn = {@flashLabel,handles.winlabel};
-    TIMER.Period = 0.2;
-    TIMER.ExecutionMode = 'fixedRate';
-    start(TIMER);
+    showWinner(handles);
 else
     setPlayerLabels(handles);
 end
-
-
+setGameControlStatus('move',handles);
 
 
 % -- Custom funcitons
@@ -326,9 +323,10 @@ default = 6.6086;
 min = 1.5;
 max = 50;
 if factor > 0
-    angle = default + factor/100 * (max - default);
+    angle = default - (factor/100) * (default - min);
 elseif factor < 0
-    angle = default - (-factor/100) * (default - min);
+    angle = default + (-factor/100) * (max - default);
+   
 else
     angle = default;
 end
@@ -357,6 +355,33 @@ switch get(label,'Visible')
         set(label,'Visible','on');
 end
 
+function showWinner(handles)
+%%
+% Show winning banner
+switch isWin()
+    case 1
+        set(handles.winlabel,'String','Player 1 wins!','ForegroundColor','red','Visible','on');
+    case 2
+        set(handles.winlabel,'String','Player 2 wins!','ForegroundColor','blue','Visible','on');     
+end
+% Flash label
+global TIMER;
+TIMER = timer;
+TIMER.TimerFcn = {@flashLabel,handles.winlabel};
+TIMER.Period = 0.2;
+TIMER.ExecutionMode = 'fixedRate';
+start(TIMER);
+
+function hideWinner(handles)
+%%
+global TIMER;
+if isobject(TIMER) && strcmp(TIMER.Running,'on')
+    stop(TIMER);
+    delete(TIMER);
+    clear('global','TIMER');
+    set(handles.winlabel,'Visible','off');
+end
+
 function gameReset(dim,handles)
 %%
 % Reset variables and GUI
@@ -367,16 +392,36 @@ set(handles.winlabel,'Visible','off');
 global WON;
 WON = 0;
 
-global TIMER;
-if isobject(TIMER) && strcmp(TIMER.Running,'on')
-    stop(TIMER);
-    delete(TIMER);
-    clear('global','TIMER');
-    set(handles.winlabel,'Visible','off');
-end
+hideWinner(handles);
+
 
 function highLight(obj)
 %%
 global cubes;
 set(cubes,'EdgeColor','[0 0 0]','LineWidth',0.5);
 set(obj,'EdgeColor','green','LineWidth',5);
+
+function setGameControlStatus(why,handles)
+%%
+global HISTORY;
+switch why
+    case 'move'
+        % After a move
+        if HISTORY.last < HISTORY.top
+            set(handles.redobtn,'Enable','on');
+        else 
+            set(handles.redobtn,'Enable','off');
+        end
+        if HISTORY.last > 0
+            set(handles.undobtn,'Enable','on');
+        else
+            set(handles.undobtn,'Enable','off');
+        end
+    case 'reset'
+        % After reset
+        set(handles.redobtn,'Enable','off');
+        set(handles.undobtn,'Enable','off');
+end
+
+
+
