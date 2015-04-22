@@ -113,9 +113,9 @@ if to_undo == [0 0 0]
     disp('Undo not available');
     return;
 end
-set(CUBES(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+set(CUBES(to_undo(1),to_undo(2),to_undo(3)),'FaceColor',[1 1 1],'FaceAlpha',0.3);
 if prev == [0 0 0]
-    set(CUBES,'EdgeColor','[0 0 0]','LineWidth',0.5); %Clear highlight
+    set(CUBES,'EdgeAlpha',0); %Clear highlight
 else 
     highLight(CUBES(prev(1),prev(2),prev(3)));
 end
@@ -399,22 +399,30 @@ function init_Axes(dim,handles)
 %%
 % Plot dim*dim*dim CUBES graph with transparent black color
 
-dist=(dim-3)*0.3+2;
+dist=3.5;
 clear('global','CUBES');
 global CUBES;
 CUBES = gobjects(dim,dim,dim);
 
 % Draw CUBES using patch
 cla(handles.axes3d,'reset');
-vert = [0 0 0;1 0 0;1 1 0;0 1 0;0 0 1;1 0 1;1 1 1;0 1 1];
-fac = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
+box = load('boxes.mat');
+
+%vert = [0 0 0;1 0 0;1 1 0;0 1 0;0 0 1;1 0 1;1 1 1;0 1 1];
+%fac = [1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
+
+vert = box.Vertex;
+fac = box.Triangualtion;
+
 for x = 1:dim
     for y = 1:dim
         for z = 1:dim
-            newvert = vert + ones(8,3) * (diag([x-1 y-1 z-1]) .* dist);
+            newvert = vert + ones(length(vert),3) * (diag([x-1 y-1 z-1]) .* dist);
             CUBES(x,y,z) = patch('Vertices',newvert,...
                 'Faces',fac,...
-                'FaceColor',0.2*[1 1 1],...
+                'FaceColor',[1 1 1],...
+                'EdgeColor',[1 1 1],...
+                'EdgeAlpha',0,...
                 'ButtonDownFcn',{@cube_Callback,[x y z],handles});
             hold on;
         end
@@ -423,10 +431,13 @@ end
 
 %Visual Effects
 axis off;
+axis equal;
 axis vis3d;
-alpha(0.15);
+alpha(0.3);
 camorbit(7,-81);
-
+light('Tag','light1','Position',3*[-1 -1 -1],'Style','local');
+light('Tag','light2','Position',[1 1 1],'Style','infinite');
+material metal
 
 function rotate_Axes(direction,handles)
 %%
@@ -479,7 +490,7 @@ if isempty(POINTER)
 end
 ptrcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
 if get(ptrcube,'FaceAlpha') ~= 1
-    set(ptrcube,'FaceColor',0.2*[1 1 1],'FaceAlpha',0.15);
+    set(ptrcube,'FaceColor',[1 1 1],'FaceAlpha',0.3);
 end
 clear('global','POINTER'); 
 
@@ -541,8 +552,8 @@ function highLight(obj)
 %%
 global CUBES;
 dim = length(CUBES);
-set(CUBES,'EdgeColor','[0 0 0]','LineWidth',0.5);
-set(obj,'EdgeColor','green','LineWidth',-0.5*dim+6);
+set(CUBES,'EdgeAlpha',0);
+set(obj,'EdgeAlpha',0.5);
 
 function setGameControlStatus(why,handles)
 %%
@@ -576,7 +587,7 @@ dim = length(CUBES);
 if isempty(POINTER) 
     if HISTORY.last == [0 0 0]
         POINTER = [1 1 1];
-        set(CUBES(1,1,1),'EdgeColor',[PLAYER==1,0,PLAYER==2],'LineWidth',-0.5*dim+6);
+        set(CUBES(1,1,1),'FaceColor',[PLAYER==1,0,PLAYER==2]);
         return;
     else
         POINTER = HISTORY.data(HISTORY.last,:);
@@ -597,17 +608,18 @@ if ~isempty(ptr(ptr>dim|ptr<1))
 end
 nowcube = CUBES(ptr(1),ptr(2),ptr(3));
 prevcube = CUBES(POINTER(1),POINTER(2),POINTER(3));
+
 % Highlight pointed cube
-if get(nowcube,'EdgeColor') == [0 1 0]  % Not Green Pointer
-    % Do nothing
+if get(nowcube,'FaceAlpha') == 1  % Occupied cubes
+    set(nowcube,'AmbientStrength',0.6); % Light it
 else
-    set(nowcube,'EdgeColor',[PLAYER==1,0,PLAYER==2],'LineWidth',-0.5*dim+6);
+    set(nowcube,'FaceColor',[PLAYER==1,0,PLAYER==2]);
 end
 % Reset passed cube
-if get(prevcube,'EdgeColor') == [0 1 0]
-    % Do nothing
+if get(prevcube,'FaceAlpha') == 1 % Occupied cubes
+    set(prevcube,'AmbientStrength',0.3); % Unlight it
 else
-    set(prevcube,'EdgeColor','[0 0 0]','LineWidth',0.5);
+    set(prevcube,'FaceColor',[1 1 1]);
 end
 POINTER = ptr;
 
